@@ -11,11 +11,9 @@ class AbyzSpider(scrapy.Spider):
 
     def parse(self, response):
 
-        """
         countries = response.xpath("(//table)[6]//a/@href").getall()
         yield from response.follow_all(countries, callback=self.parse_country)
-        """
-        yield scrapy.Request(url='http://www.abyznewslinks.com/unitenc.htm', callback=self.parse_country)
+        # yield scrapy.Request(url='http://www.abyznewslinks.com/uzbek.htm', callback=self.parse_country)
 
     def parse_country(self, response):
         header = response.xpath(
