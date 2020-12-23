@@ -7,6 +7,14 @@ import scrapy
 
 
 class AbyznewsItem(scrapy.Item):
-    # define the fields for your item here like:
-    # name = scrapy.Field()
-    pass
+    country = scrapy.Field()
+    sub_region = scrapy.Field()
+    sub_national = scrapy.Field()
+    city_scope = scrapy.Field()
+    name = scrapy.Field()
+    url = scrapy.Field()
+    media_type = scrapy.Field()
+    media_focus = scrapy.Field()
+    channel = scrapy.Field()
+    language = scrapy.Field()
+

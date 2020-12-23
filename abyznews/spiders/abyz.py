@@ -1,6 +1,8 @@
 import scrapy
-import time
 import re
+
+from scrapy.loader import ItemLoader
+from abyznews.items import AbyznewsItem
 
 
 class AbyzSpider(scrapy.Spider):
@@ -8,12 +10,15 @@ class AbyzSpider(scrapy.Spider):
     allowed_domains = ['abyznewslinks.com']
     start_urls = ['http://www.abyznewslinks.com/allco.htm']
     pages = 0
+    item_list_set = {'sub_region', 'country', 'sub_national',
+                'city_scope', 'name', 'url', 'media_type',
+                'media_focus', 'channel', 'language'}
 
     def parse(self, response):
 
         countries = response.xpath("(//table)[6]//a/@href").getall()
         yield from response.follow_all(countries, callback=self.parse_country)
-        # yield scrapy.Request(url='http://www.abyznewslinks.com/uzbek.htm', callback=self.parse_country)
+        # yield scrapy.Request(url='http://www.abyznewslinks.com/bulga.htm', callback=self.parse_country)
 
     def parse_country(self, response):
         header = response.xpath(
@@ -46,7 +51,7 @@ class AbyzSpider(scrapy.Spider):
 
         if len(path) >= 4:  # fourth name in the path is country
             country = path[3]
-            print(country + ' ' + str(self.pages))
+            # print(country + ' ' + str(self.pages))
 
         if len(path) >= 5:  # fifth name in the path is sub-national level
             sub_national = path[4]
@@ -60,7 +65,7 @@ class AbyzSpider(scrapy.Spider):
             city_scope = table.xpath('.//td')[0]
             city_scope_list = self.get_from_linebreaks(city_scope)
             # this function takes into account line breaks to line up all variables as in the original document
-            print(city_scope_list)
+            # print(city_scope_list)
             name_and_url = table.xpath('.//td')[1]
 
             # name and url have special similar functions to accurately insert line breaks as empty spaces
@@ -70,7 +75,7 @@ class AbyzSpider(scrapy.Spider):
             media_types = table.xpath('.//td')[2]
             media_types_list = self.get_from_linebreaks(media_types)
             media_types_list = self.decode(header_dict, media_types_list)
-            print(media_types_list)
+            # print(media_types_list)
             media_focus = table.xpath('.//td')[3]
             media_focus_list = self.get_from_linebreaks(media_focus)
             media_focus_list = self.decode(header_dict, media_focus_list)
@@ -110,36 +115,41 @@ class AbyzSpider(scrapy.Spider):
                 # check that every variable exists before adding it in the dictionary
 
                 if sub_region:
-                    source_dict['Sub-region'] = sub_region
+                    source_dict['sub_region'] = sub_region
 
                 if country:
-                    source_dict['Country'] = country
+                    source_dict['country'] = country
 
                 if sub_national:
-                    source_dict['Sub-national'] = sub_national
+                    source_dict['sub_national'] = sub_national
 
-                if len(city_scope_list) > i - scope_skip:
-                    source_dict['City/Scope'] = city_scope_list[i]
+                if len(city_scope_list) > i:
+                    source_dict['city_scope'] = city_scope_list[i]
 
                 if len(name_list) > i:
-                    source_dict['Name'] = name_list[i]
+                    source_dict['name'] = name_list[i]
 
                 if len(url_list) > i:
-                    source_dict['URL'] = url_list[i]
+                    source_dict['url'] = url_list[i]
 
                 if len(media_types_list) > i:
-                    source_dict['Media Type'] = media_types_list[i]
+                    source_dict['media_type'] = media_types_list[i]
 
                 if len(media_focus_list) > i:
-                    source_dict['Media Focus'] = media_focus_list[i]
+                    source_dict['media_focus'] = media_focus_list[i]
 
                 if len(channels_list) > i:
-                    source_dict['Channel'] = channels_list[i]
+                    source_dict['channel'] = channels_list[i]
 
                 if len(language_list) > i:
-                    source_dict['Language'] = language_list[i]
+                    source_dict['language'] = language_list[i]
 
                 yield source_dict
+
+                item = ItemLoader(item=AbyznewsItem(), response=response)
+                for key, value in source_dict.items():
+                    item.add_value(key, value)
+        return item.load_item()
 
     @staticmethod
     def get_from_linebreaks(selector):
